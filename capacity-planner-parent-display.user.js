@@ -13,6 +13,7 @@
 // @connect      levelaccess-services.atlassian.net
 // @connect      atlassian.net
 // @updateURL    https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.user.js
+// @downloadURL  https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.user.js
 // ==/UserScript==
 
 (function () {
