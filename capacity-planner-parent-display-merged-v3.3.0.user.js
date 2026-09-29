@@ -12,7 +12,7 @@
 // @grant        GM_openInTab
 // @connect      levelaccess-services.atlassian.net
 // @connect      atlassian.net
-// @updateURL    https://github.com/ali-levelaccess/capacity-planner-tampermonkey/blob/4ea5c9b44bdc274a4f73d120186bf39a9c498257/capacity-planner-parent-display-merged-v3.3.0.user.js
+// @updateURL    https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display-merged-v3.3.0.user.js
 // ==/UserScript==
 
 (function () {
