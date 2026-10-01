@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Tempo Capacity Planner Parent Display - Merged
 // @namespace    capacity-planner-parent-display
-// @version      3.3.0
+// @version      3.3.1
 // @description  Displays responsive Jira parent links and cleaned parent summaries on Tempo Planner cards across days and list views.
 // @author       Ali Zimmerman / Yaxche Manrique
 // @match        https://levelaccess-services.atlassian.net/*
@@ -264,7 +264,7 @@
             .${BADGE_CLASS} {
                 display: flex;
                 flex-direction: column;
-                color: #FFFFFF;
+                color: var(--az-parent-text, #FFFFFF);
                 min-width: 0;
             }
             .${BADGE_CLASS}.az-eyebrow {
@@ -281,18 +281,18 @@
                 line-height: 1.35;
             }
             .${BADGE_CLASS} .az-label {
-                color: #FFFFFF;
+                color: var(--az-parent-text, #FFFFFF);
                 font-weight: 600;
             }
             .${BADGE_CLASS} a {
-                color: #5CD5FF;
+                color: var(--az-parent-link, #5CD5FF);
                 font-weight: 600;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
             .${BADGE_CLASS} .az-summary {
-                color: #FFFFFF;
+                color: var(--az-parent-text, #FFFFFF);
                 font-weight: 600;
                 white-space: normal;
                 overflow-wrap: anywhere;
@@ -309,6 +309,49 @@
             }
         `;
         (document.head || document.documentElement).appendChild(style);
+    }
+
+    function parseCssColor(color) {
+        if (!color || color === 'transparent') {
+            return null;
+        }
+        const match = color.match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)(?:\s*,\s*(\d*(?:\.\d+)?))?\s*\)/i);
+        if (!match) {
+            return null;
+        }
+        return {
+            r: Number(match[1]),
+            g: Number(match[2]),
+            b: Number(match[3]),
+            a: match[4] === undefined || match[4] === '' ? 1 : Number(match[4])
+        };
+    }
+
+    function findBackgroundColor(element) {
+        let node = element;
+        while (node && node.nodeType === Node.ELEMENT_NODE) {
+            const color = parseCssColor(getComputedStyle(node).backgroundColor);
+            if (color && color.a > 0.05) {
+                return color;
+            }
+            node = node.parentElement;
+        }
+        return null;
+    }
+
+    function isLightColor(color) {
+        const luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
+        return luminance > 0.55;
+    }
+
+    function applyBadgeTheme(badge, surface) {
+        const background = findBackgroundColor(surface || badge.parentElement);
+        const lightSurface = background
+            ? isLightColor(background)
+            : Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+
+        badge.style.setProperty('--az-parent-text', lightSurface ? '#172B4D' : '#FFFFFF');
+        badge.style.setProperty('--az-parent-link', lightSurface ? '#0052CC' : '#5CD5FF');
     }
 
     function escapeRegExp(value) {
@@ -399,6 +442,7 @@
         badge.setAttribute('data-child-key', card.getAttribute(DONE_ATTR) || '');
         badge.setAttribute('data-parent-key', parentInfo.key);
         fitBadge(badge, width);
+        applyBadgeTheme(badge, box);
 
         if (mode === 'cell') {
             const label = document.createElement('span');
@@ -659,6 +703,68 @@
         }
 
         enabled = nextEnabled;
+
+        if (enabled) {
+            observer = new MutationObserver(scheduleScan);
+            observer.observe(document.body, { childList: true, subtree: true });
+            window.addEventListener('resize', scheduleScan);
+            scheduleScan();
+        } else {
+            if (observer) {
+                observer.disconnect();
+                observer = null;
+            }
+            window.removeEventListener('resize', scheduleScan);
+            clearTimeout(scanTimer);
+            clearAllBadges();
+        }
+    }
+
+    // ========================= TOP-FRAME HANDSHAKE ============================
+    window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || data.tag !== MESSAGE_TAG || data.type !== 'context') {
+            return;
+        }
+        if (event.origin !== JIRA) {
+            return;
+        }
+
+        contextAnswered = true;
+        const previousListView = listView;
+        const wasEnabled = enabled;
+        listView = Boolean(data.listView);
+        setEnabled(Boolean(data.enabled));
+
+        if (enabled && wasEnabled && listView !== previousListView) {
+            clearAllBadges();
+            scheduleScan();
+        }
+    });
+
+    function requestContext() {
+        try {
+            window.top.postMessage(
+                { tag: MESSAGE_TAG, type: 'request-context' },
+                JIRA
+            );
+        } catch (error) {
+            log('Could not request context:', error.message);
+        }
+    }
+
+    requestContext();
+
+    let contextTries = 0;
+    const retryContext = setInterval(() => {
+        contextTries += 1;
+        if (contextAnswered || contextTries > 12) {
+            clearInterval(retryContext);
+            return;
+        }
+        requestContext();
+    }, 400);
+})();
 
         if (enabled) {
             observer = new MutationObserver(scheduleScan);
