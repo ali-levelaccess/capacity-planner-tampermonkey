@@ -3,7 +3,7 @@
 // @namespace    capacity-planner-parent-display
 // @version      3.3.0
 // @description  Displays responsive Jira parent links and cleaned parent summaries on Tempo Planner cards across days and list views.
-// @author       Ali Zimmerman / merged implementation
+// @author       Ali Zimmerman / Yaxche Manrique
 // @match        https://levelaccess-services.atlassian.net/*
 // @match        https://*.atlassian-dev.net/*
 // @match        https://*.tempo.io/*
@@ -12,8 +12,8 @@
 // @grant        GM_openInTab
 // @connect      levelaccess-services.atlassian.net
 // @connect      atlassian.net
-// @updateURL    https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.user.js
-// @downloadURL  https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.user.js
+// @updateURL    https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.js
+// @downloadURL  https://raw.githubusercontent.com/ali-levelaccess/capacity-planner-tampermonkey/main/capacity-planner-parent-display.js
 // ==/UserScript==
 
 (function () {
